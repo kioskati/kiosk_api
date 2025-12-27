@@ -885,6 +885,155 @@ app.delete("/api/contents/:id", (req, res) => {
   });
 });
 
+// ########### GSMA ####################
+
+// GET all GSMA contents
+app.get("/api/gsma", (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const sql = `
+    SELECT 
+      gc.*, 
+      l.name AS language
+    FROM 
+      gsmaContents gc
+    LEFT JOIN 
+      languages l ON gc.languageId = l.id
+  `;
+
+  db.all(sql, [], (err, rows) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit - 1;
+    const duplicated = [];
+    for (let i = 0; i < 10; i++) {
+      duplicated.push(...rows);
+    }
+
+    const paginatedItems = rows.slice(startIndex, endIndex);
+    const response = {
+      page,
+      limit,
+      totalCount: rows.length,
+      totalPages: Math.ceil(rows.length / limit),
+      data: paginatedItems,
+    };
+
+    res.json(response);
+  });
+});
+
+// POST insert GSMA contents
+app.post("/api/gsma", express.json(), (req, res) => {
+  const jsonData = req.body.data;
+
+  if (!Array.isArray(jsonData)) {
+    return res.status(400).json({ error: "Invalid data format" });
+  }
+
+  const insertStmt = db.prepare(
+    "INSERT INTO gsmaContents (titleAmharic, titleEnglish, languageId, type, filePath, thumbNailPath) VALUES (?, ?, ?, ?, ?, ?)"
+  );
+
+  let insertedCount = 0;
+  let duplicateCount = 0;
+
+  db.serialize(() => {
+    let processed = 0;
+
+    jsonData.forEach((row, index) => {
+      insertStmt.run(
+        [
+          row.titleAmharic,
+          row.titleEnglish,
+          row.languageId,
+          row.type,
+          row.filePath,
+          row.thumbNailPath,
+        ],
+        (err) => {
+          processed++;
+
+          if (err) {
+            if (err.code === "SQLITE_CONSTRAINT") {
+              //   console.warn(`Duplicate found, skipping url: ${row.url}`);
+              duplicateCount++;
+            } else {
+              //   console.error("Unexpected insert error:", err);
+            }
+          } else {
+            insertedCount++;
+          }
+
+          if (processed === jsonData.length) {
+            insertStmt.finalize((finalizeErr) => {
+              if (finalizeErr) {
+                return res
+                  .status(500)
+                  .json({ error: "Database finalize failed" });
+              }
+
+              return res.json({
+                message: "Upload complete",
+                inserted: insertedCount,
+                duplicates: duplicateCount,
+              });
+            });
+          }
+        }
+      );
+    });
+
+    if (jsonData.length === 0) {
+      insertStmt.finalize(() => {
+        return res.json({
+          message: "No data received",
+          inserted: 0,
+          duplicates: 0,
+        });
+      });
+    }
+  });
+});
+
+// PUT update GSMA contents
+app.put("/api/gsma/:id", (req, res) => {
+  const id = req.params.id;
+  const { name } = req.body;
+  if (!name) {
+    return res.status(400).json({ message: "Title Amharic is required" });
+  }
+  db.run(
+    "UPDATE gsmaContents SET titleAmharic = ? WHERE id = ?",
+    [titleAmharic, id],
+    function (err) {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      if (this.changes === 0) {
+        return res.status(404).json({ message: "Content not found" });
+      }
+      res.json({ id, name });
+    }
+  );
+});
+
+// DELETE GSMA contents
+app.delete("/api/gsma/:id", (req, res) => {
+  const id = req.params.id;
+  db.run("DELETE FROM gsmaContents WHERE id = ?", [id], function (err) {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    if (this.changes === 0) {
+      return res.status(404).json({ message: "Content not found" });
+    }
+    res.json({ message: "Content deleted" });
+  });
+});
+
 // Start server
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);

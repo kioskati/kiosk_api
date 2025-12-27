@@ -44,6 +44,17 @@ db.serialize(() => {
         FOREIGN KEY (languageId) REFERENCES languages(id) ON DELETE SET NULL ON UPDATE SET NULL,
         FOREIGN KEY (subjectAreaId) REFERENCES subjectAreas(id) ON DELETE SET NULL ON UPDATE SET NULL
     )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS gsmaContents (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        titleAmharic TEXT NOT NULL UNIQUE,
+        titleEnglish TEXT NOT NULL UNIQUE,
+        languageId INTEGER NOT NULL,
+        type TEXT NOT NULL,
+        thumbNailPath TEXT NOT NULL,
+        filePath TEXT NOT NULL,
+        FOREIGN KEY (languageId) REFERENCES languages(id) ON DELETE SET NULL ON UPDATE SET NULL
+    )`);
 });
 
 module.exports = db;
