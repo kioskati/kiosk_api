@@ -73,7 +73,10 @@ db.serialize(() => {
         displayName TEXT NOT NULL UNIQUE,
         languageTranslation TEXT NULL,
         topMenuTranslation TEXT NULL,
-        mainMenuTranslation TEXT NULL)`);
+        mainMenuTranslation TEXT NULL,
+        clickHere1 Text NULL,
+        clickHere2 Text NULL,
+        noAudioContent Text NULL)`);
 
   db.run(`CREATE TABLE IF NOT EXISTS _8028TopMenu (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
