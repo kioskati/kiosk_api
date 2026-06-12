@@ -1078,7 +1078,7 @@ app.post("/api/8028_languages", express.json(), (req, res) => {
   }
 
   const insertStmt = db.prepare(
-    "INSERT INTO _8028Languages (code, code8028, name, displayName, languageTranslation, topMenuTranslation, mainMenuTranslation) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    "INSERT INTO _8028Languages (code, code8028, name, displayName, languageTranslation, topMenuTranslation, mainMenuTranslation, clickHere1, clickHere2, noAudioContent) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
   );
 
   let insertedCount = 0;
@@ -1097,6 +1097,9 @@ app.post("/api/8028_languages", express.json(), (req, res) => {
           row.languageTranslation,
           row.topMenuTranslation,
           row.mainMenuTranslation,
+          row.clickHere1,
+          row.clickHere2,
+          row.noAudioContent,
         ],
         (err) => {
           processed++;
@@ -2259,7 +2262,7 @@ app.post("/api/8028_audio_contents", express.json(), (req, res) => {
 
           if (err) {
             if (err.code === "SQLITE_CONSTRAINT") {
-              //   console.warn(`Duplicate found, skipping url: ${row.url}`);
+              // console.warn(`Duplicate found, skipping url: ${row.contentFile}`);
               duplicateCount++;
             } else {
               //   console.error("Unexpected insert error:", err);
